@@ -1,14 +1,53 @@
-import { StyleSheet } from 'react-native';
+import {StyleSheet, TextInput, Image, Button, Keyboard, ScrollView}  from 'react-native';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+import { View } from '@/components/Themed';
+import {useState} from "react";
 
 export default function TabOneScreen() {
+  const [text, onChangeText] = useState('gray cat sitting on a throne');
+  const [searchText, setSearchText] = useState('');
+
+  const handleSubmit =  () => {
+    setSearchText(text)
+    Keyboard.dismiss();
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
+      <TextInput
+          style={styles.input}
+          onChangeText={onChangeText}
+          value={text}
+          multiline
+          numberOfLines={4}
+      />
+      <Button onPress={handleSubmit} title="Submit" />
+        <ScrollView>
+      <Image
+          style={styles.tinyLogo}
+          source={{
+            uri: `https://swsvindland--stable-diffusion-xl-fastapi-app.modal.run/?prompt=${searchText}`,
+          }}
+      />
+        <Image
+            style={styles.tinyLogo}
+            source={{
+                uri: `https://swsvindland--stable-diffusion-xl-fastapi-app.modal.run/?prompt=${searchText}`,
+            }}
+        />
+        <Image
+            style={styles.tinyLogo}
+            source={{
+                uri: `https://swsvindland--stable-diffusion-xl-fastapi-app.modal.run/?prompt=${searchText}`,
+            }}
+        />
+        <Image
+            style={styles.tinyLogo}
+            source={{
+                uri: `https://swsvindland--stable-diffusion-xl-fastapi-app.modal.run/?prompt=${searchText}`,
+            }}
+        />
+        </ScrollView>
     </View>
   );
 }
@@ -27,5 +66,16 @@ const styles = StyleSheet.create({
     marginVertical: 30,
     height: 1,
     width: '80%',
+  },
+  input: {
+    height: 40,
+    margin: 12,
+    borderWidth: 1,
+    padding: 10,
+    backgroundColor: 'white'
+  },
+  tinyLogo: {
+    width: 300,
+    height: 300,
   },
 });
