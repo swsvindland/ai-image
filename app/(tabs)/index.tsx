@@ -1,81 +1,64 @@
-import {StyleSheet, TextInput, Image, Button, Keyboard, ScrollView}  from 'react-native';
+import {
+  Text,
+  TextInput,
+  Image,
+  Keyboard,
+  ScrollView,
+  Button,
+} from "react-native";
 
-import { View } from '@/components/Themed';
-import {useState} from "react";
+import { View } from "@/components/Themed";
+import { useState } from "react";
+import { Slider } from "@miblanchard/react-native-slider";
 
 export default function TabOneScreen() {
-  const [text, onChangeText] = useState('gray cat sitting on a throne');
-  const [searchText, setSearchText] = useState('');
+  const [text, onChangeText] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [number, setNumber] = useState<number>(1);
 
-  const handleSubmit =  () => {
-    setSearchText(text)
+  const handleSubmit = () => {
+    setSearchText(text);
     Keyboard.dismiss();
-  }
+  };
 
   return (
-    <View style={styles.container}>
-      <TextInput
-          style={styles.input}
+    <View className="flex-1 items-center justify-center bg-white">
+      <View className="flex flex-row h-24 justify-center">
+        <TextInput
+          className="flex-1 border border-gray-400 rounded m-2"
           onChangeText={onChangeText}
           value={text}
           multiline
           numberOfLines={4}
-      />
-      <Button onPress={handleSubmit} title="Submit" />
-        <ScrollView>
-      <Image
-          style={styles.tinyLogo}
-          source={{
-            uri: `https://swsvindland--stable-diffusion-xl-fastapi-app.modal.run/?prompt=${searchText}`,
-          }}
-      />
-        <Image
-            style={styles.tinyLogo}
-            source={{
-                uri: `https://swsvindland--stable-diffusion-xl-fastapi-app.modal.run/?prompt=${searchText}`,
-            }}
         />
-        <Image
-            style={styles.tinyLogo}
-            source={{
-                uri: `https://swsvindland--stable-diffusion-xl-fastapi-app.modal.run/?prompt=${searchText}`,
-            }}
+      </View>
+      <View className="w-full mx-2 align-stretch justify-center px-4 py-2">
+        <Slider
+          value={number}
+          onValueChange={(value) => setNumber(value[0])}
+          step={1}
+          minimumValue={1}
+          maximumValue={4}
         />
-        <Image
-            style={styles.tinyLogo}
-            source={{
-                uri: `https://swsvindland--stable-diffusion-xl-fastapi-app.modal.run/?prompt=${searchText}`,
-            }}
-        />
-        </ScrollView>
+        <Text>{number}</Text>
+      </View>
+      <View className="w-full mx-2 align-stretch justify-center px-4 py-2">
+        <Button onPress={handleSubmit} title="Submit" />
+      </View>
+      <ScrollView>
+        <View className="flex flex-col justify-center gap-4">
+          {Array.from(Array(number).keys()).map((index) => (
+            <Image
+              key={index}
+              className="w-96 h-96 rounded-2xl shadow"
+              source={{
+                // uri: `https://swsvindland--stable-diffusion-xl-fastapi-app.modal.run/?prompt=${searchText}`,
+                uri: "http://m.gettywallpapers.com/wp-content/uploads/2023/05/Cool-Anime-Pfp.jpg",
+              }}
+            />
+          ))}
+        </View>
+      </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
-  input: {
-    height: 40,
-    margin: 12,
-    borderWidth: 1,
-    padding: 10,
-    backgroundColor: 'white'
-  },
-  tinyLogo: {
-    width: 300,
-    height: 300,
-  },
-});
