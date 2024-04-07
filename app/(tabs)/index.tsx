@@ -74,10 +74,14 @@ export default function TabOneScreen() {
                 <Pressable>
                   {({ pressed }) => (
                     <Image
-                      className="w-96 h-96 rounded-2xl shadow"
+                      className={
+                        pressed
+                          ? "w-96 h-96 rounded-2xl shadow opacity-80"
+                          : "w-96 h-96 rounded-2xl shadow"
+                      }
                       source={{
-                        // uri: `https://swsvindland--stable-diffusion-xl-fastapi-app.modal.run/?prompt=${searchText}`,
-                        uri: "http://m.gettywallpapers.com/wp-content/uploads/2023/05/Cool-Anime-Pfp.jpg",
+                        uri: `https://swsvindland--${model}-fastapi-app.modal.run/?prompt=${searchText}`,
+                        // uri: "http://m.gettywallpapers.com/wp-content/uploads/2023/05/Cool-Anime-Pfp.jpg",
                       }}
                     />
                   )}
