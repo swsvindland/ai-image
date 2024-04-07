@@ -18,7 +18,9 @@ export default function TabOneScreen() {
   const query = useQuery({
     queryKey: ["Images", searchModel, searchText, searchNumber],
     queryFn: async () => {
-      const images = [];
+      const images: string[] = [];
+
+      if (!searchText) return images;
 
       for (let i = 0; i < searchNumber; ++i) {
         const file = await FileSystem.downloadAsync(
