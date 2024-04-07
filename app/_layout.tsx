@@ -10,6 +10,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 
 import { useColorScheme } from "@/components/useColorScheme";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -48,15 +49,25 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-      </Stack>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+        </Stack>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }

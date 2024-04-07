@@ -5,11 +5,14 @@ import {
   Keyboard,
   ScrollView,
   Button,
+  SafeAreaView,
+  Pressable,
 } from "react-native";
 
 import { View } from "@/components/Themed";
-import { useState } from "react";
+import React, { useState } from "react";
 import { Slider } from "@miblanchard/react-native-slider";
+import { Link } from "expo-router";
 
 export default function TabOneScreen() {
   const [text, onChangeText] = useState("");
@@ -22,14 +25,12 @@ export default function TabOneScreen() {
   };
 
   return (
-    <View className="flex-1 items-center justify-center bg-white">
+    <View className="flex-1 items-center justify-center p-4">
       <View className="flex flex-row h-24 justify-center">
         <TextInput
-          className="flex-1 border border-gray-400 rounded m-2"
+          className="flex-1 border border-gray-400 rounded m-2 p-4"
           onChangeText={onChangeText}
           value={text}
-          multiline
-          numberOfLines={4}
         />
       </View>
       <View className="w-full mx-2 align-stretch justify-center px-4 py-2">
@@ -42,20 +43,25 @@ export default function TabOneScreen() {
         />
         <Text>{number}</Text>
       </View>
-      <View className="w-full mx-2 align-stretch justify-center px-4 py-2">
+      <View className="w-full justify-center py-8 px-4">
         <Button onPress={handleSubmit} title="Submit" />
       </View>
       <ScrollView>
         <View className="flex flex-col justify-center gap-4">
           {Array.from(Array(number).keys()).map((index) => (
-            <Image
-              key={index}
-              className="w-96 h-96 rounded-2xl shadow"
-              source={{
-                // uri: `https://swsvindland--stable-diffusion-xl-fastapi-app.modal.run/?prompt=${searchText}`,
-                uri: "http://m.gettywallpapers.com/wp-content/uploads/2023/05/Cool-Anime-Pfp.jpg",
-              }}
-            />
+            <Link key={index} href="/modal" asChild>
+              <Pressable>
+                {({ pressed }) => (
+                  <Image
+                    className="w-96 h-96 rounded-2xl shadow"
+                    source={{
+                      // uri: `https://swsvindland--stable-diffusion-xl-fastapi-app.modal.run/?prompt=${searchText}`,
+                      uri: "http://m.gettywallpapers.com/wp-content/uploads/2023/05/Cool-Anime-Pfp.jpg",
+                    }}
+                  />
+                )}
+              </Pressable>
+            </Link>
           ))}
         </View>
       </ScrollView>
