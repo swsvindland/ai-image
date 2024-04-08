@@ -9,9 +9,11 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { MD3LightTheme, PaperProvider } from "react-native-paper";
+import Purchases, { LOG_LEVEL } from "react-native-purchases";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Platform } from "react-native";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -69,6 +71,16 @@ const theme = {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+
+  useEffect(() => {
+    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+
+    if (Platform.OS === "ios") {
+      Purchases.configure({ apiKey: "appl_ZXVzlPHsIIafEVBufTgvOCwqFaL" });
+    } else if (Platform.OS === "android") {
+      Purchases.configure({ apiKey: "" });
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

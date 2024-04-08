@@ -6,6 +6,7 @@ import { Slider } from "@miblanchard/react-native-slider";
 import { Button, SegmentedButtons, TextInput } from "react-native-paper";
 import { useQuery } from "@tanstack/react-query";
 import * as FileSystem from "expo-file-system";
+import { checkSubscriptionStatus } from "@/app/(tabs)/two";
 
 export default function TabOneScreen() {
   const [model, setModel] = useState<string>("default");
@@ -14,6 +15,11 @@ export default function TabOneScreen() {
   const [searchText, setSearchText] = useState("");
   const [number, setNumber] = useState<number>(1);
   const [searchNumber, setSearchNumber] = useState<number>(1);
+
+  const premiumQuery = useQuery({
+    queryKey: ["Premium"],
+    queryFn: checkSubscriptionStatus,
+  });
 
   const query = useQuery({
     queryKey: ["Images", searchModel, searchText, searchNumber],
@@ -76,7 +82,7 @@ export default function TabOneScreen() {
           onValueChange={(value) => setNumber(value[0])}
           step={1}
           minimumValue={1}
-          maximumValue={4}
+          maximumValue={premiumQuery.data ? 4 : 1}
         />
       </View>
       <View className="w-full justify-center pb-2 px-4">

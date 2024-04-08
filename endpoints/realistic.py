@@ -75,7 +75,7 @@ class Model:
             "*/diffusion_pytorch_model.safetensors",
         ]
         snapshot_download(
-            'SG161222/Realistic_Vision_V5.1_noVAE'
+            'SG161222/RealVisXL_V4.0'
             # ignore_patterns=ignore,
         )
 
@@ -90,7 +90,7 @@ class Model:
 
         # Load base model
         self.base = DiffusionPipeline.from_pretrained(
-            'SG161222/Realistic_Vision_V5.1_noVAE',
+            'SG161222/RealVisXL_V4.0',
             **load_options
         )
 
