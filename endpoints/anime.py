@@ -98,7 +98,7 @@ class Model:
             prompt="masterpiece, best quality, very aesthetic, absurdres" + prompt,
             negative_prompt=negative_prompt,
             width=832,
-            height=1216,
+            height=832,
             guidance_scale=7,
             num_inference_steps=28
         ).images[0]

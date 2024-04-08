@@ -1,12 +1,30 @@
-import { Image, Keyboard, FlatList } from "react-native";
+import { Image, Keyboard, FlatList, Text } from "react-native";
 
 import { View } from "@/components/Themed";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Slider } from "@miblanchard/react-native-slider";
 import { Button, SegmentedButtons, TextInput } from "react-native-paper";
 import { useQuery } from "@tanstack/react-query";
 import * as FileSystem from "expo-file-system";
 import { checkSubscriptionStatus } from "@/app/(tabs)/two";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const getTrialAmount = async () => {
+  try {
+    const value = await AsyncStorage.getItem("trialAmount");
+    if (value !== null) {
+      return parseInt(value ?? "0");
+    }
+  } catch (e) {
+    return 0;
+  }
+};
+
+const saveTrialAmount = async (value: number) => {
+  try {
+    await AsyncStorage.setItem("trialAmount", value.toString());
+  } catch (e) {}
+};
 
 export default function TabOneScreen() {
   const [model, setModel] = useState<string>("default");
@@ -15,14 +33,37 @@ export default function TabOneScreen() {
   const [searchText, setSearchText] = useState("");
   const [number, setNumber] = useState<number>(1);
   const [searchNumber, setSearchNumber] = useState<number>(1);
+  const [trialAmount, setTrialAmount] = useState<number | undefined>(undefined);
+  const [generatedAmount, setGeneratedAmount] = useState<number>(0);
 
   const premiumQuery = useQuery({
     queryKey: ["Premium"],
     queryFn: checkSubscriptionStatus,
   });
 
+  const trialAmountQuery = useQuery({
+    queryKey: ["TrialAmount"],
+    queryFn: getTrialAmount,
+  });
+
+  useEffect(() => {
+    // Setup trial
+    if (trialAmount === undefined && trialAmountQuery.data == null) {
+      setTrialAmount(10);
+      saveTrialAmount(10);
+    } else if (trialAmount === undefined && trialAmountQuery.data != null) {
+      setTrialAmount(trialAmountQuery.data);
+    }
+  }, [trialAmount, trialAmountQuery.data]);
+
   const query = useQuery({
-    queryKey: ["Images", searchModel, searchText, searchNumber],
+    queryKey: [
+      "Images",
+      searchModel,
+      searchText,
+      searchNumber,
+      generatedAmount,
+    ],
     queryFn: async () => {
       const images: string[] = [];
 
@@ -42,15 +83,29 @@ export default function TabOneScreen() {
     },
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (trialAmount == null || trialAmount === 0) return;
+
+    setGeneratedAmount(generatedAmount + 1);
+
     setSearchText(text);
     setSearchNumber(number);
     setSearchModel(model);
     Keyboard.dismiss();
+
+    const newTrial = trialAmount - 1;
+    setTrialAmount(newTrial);
+    await saveTrialAmount(newTrial);
   };
 
   return (
     <View className="flex-1 items-center justify-center px-4 pt-4">
+      {!premiumQuery.data ? (
+        <Text className="py-2">
+          Welcome to Mojo! You have {trialAmount} images left in your free
+          trial. Go to settings tab to subscribe.
+        </Text>
+      ) : null}
       <SegmentedButtons
         value={model}
         onValueChange={setModel}
@@ -90,6 +145,7 @@ export default function TabOneScreen() {
           mode="contained"
           onPress={handleSubmit}
           loading={query.isLoading}
+          disabled={!trialAmount}
         >
           Generate {number} Images
         </Button>
