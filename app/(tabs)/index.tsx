@@ -101,7 +101,7 @@ export default function TabOneScreen() {
   return (
     <View className="flex-1 items-center justify-center px-4 pt-4">
       {!premiumQuery.data ? (
-        <Text className="py-2">
+        <Text className="py-2 dark:text-white">
           Welcome to Mojo! You have {trialAmount} images left in your free
           trial. Go to settings tab to subscribe.
         </Text>

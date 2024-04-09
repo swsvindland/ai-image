@@ -5,8 +5,14 @@ import Purchases from "react-native-purchases";
 import { useQuery } from "@tanstack/react-query";
 import { Text } from "react-native";
 
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export const checkSubscriptionStatus = async () => {
   try {
+    // TODO: Fix this hack for testing
+    await sleep(3000);
     const customerInfo = await Purchases.getCustomerInfo();
     return typeof customerInfo.entitlements.active["premium"] !== "undefined";
   } catch (e) {
