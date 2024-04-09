@@ -11,7 +11,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const getTrialAmount = async () => {
   try {
-    const value = await AsyncStorage.getItem("trialAmount");
+    const value = await AsyncStorage.getItem("trial");
     if (value !== null) {
       return parseInt(value ?? "0");
     }
@@ -22,8 +22,10 @@ const getTrialAmount = async () => {
 
 const saveTrialAmount = async (value: number) => {
   try {
-    await AsyncStorage.setItem("trialAmount", value.toString());
-  } catch (e) {}
+    await AsyncStorage.setItem("trial", value.toString());
+  } catch (e) {
+    console.error(e);
+  }
 };
 
 export default function TabOneScreen() {
@@ -48,7 +50,11 @@ export default function TabOneScreen() {
 
   useEffect(() => {
     // Setup trial
-    if (trialAmount === undefined && trialAmountQuery.data == null) {
+    if (
+      trialAmount === undefined &&
+      trialAmountQuery.data == null &&
+      trialAmountQuery.isFetched
+    ) {
       setTrialAmount(10);
       saveTrialAmount(10);
     } else if (trialAmount === undefined && trialAmountQuery.data != null) {

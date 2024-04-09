@@ -12,7 +12,7 @@ async function sleep(ms: number): Promise<void> {
 export const checkSubscriptionStatus = async () => {
   try {
     // TODO: Fix this hack for testing
-    await sleep(3000);
+    await sleep(1000);
     const customerInfo = await Purchases.getCustomerInfo();
     return typeof customerInfo.entitlements.active["premium"] !== "undefined";
   } catch (e) {
