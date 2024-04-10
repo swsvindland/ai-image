@@ -53,7 +53,7 @@ export default function TabOneScreen() {
     if (
       trialAmount === undefined &&
       trialAmountQuery.data == null &&
-      trialAmountQuery.isFetched
+      !trialAmountQuery.isLoading
     ) {
       setTrialAmount(10);
       saveTrialAmount(10);
@@ -61,6 +61,10 @@ export default function TabOneScreen() {
       setTrialAmount(trialAmountQuery.data);
     }
   }, [trialAmount, trialAmountQuery.data]);
+
+  useEffect(() => {
+    if (premiumQuery.data) setTrialAmount(9999);
+  }, [premiumQuery.data]);
 
   const query = useQuery({
     queryKey: [
@@ -160,7 +164,7 @@ export default function TabOneScreen() {
         data={query.data}
         renderItem={({ item }) => (
           <Image
-            className="w-96 h-96 rounded-2xl shadow my-2"
+            className="w-80 h-80 rounded-2xl shadow my-2"
             source={{
               uri: item,
             }}
