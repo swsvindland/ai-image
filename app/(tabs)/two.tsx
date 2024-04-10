@@ -31,7 +31,7 @@ export default function TabTwoScreen() {
     <View className="flex-1">
       {premiumQuery.data ? (
         <View className="flex w-full h-full justify-center items-center p-4">
-          <Text>
+          <Text className="dark:text-white">
             You are subscribed to Premium. Manage your subscription in the apple
             app store.
           </Text>

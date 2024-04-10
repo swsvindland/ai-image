@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.swsvindland.aiimagegenerator",
-      "buildNumber": "9"
+      "buildNumber": "11"
     },
     "android": {
       "adaptiveIcon": {

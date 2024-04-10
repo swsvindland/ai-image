@@ -103,7 +103,7 @@ export default function TabOneScreen() {
     setSearchModel(model);
     Keyboard.dismiss();
 
-    const newTrial = trialAmount - 1;
+    const newTrial = trialAmount < 1 ? 0 : trialAmount - 1;
     setTrialAmount(newTrial);
     await saveTrialAmount(newTrial);
   };
@@ -141,15 +141,17 @@ export default function TabOneScreen() {
           numberOfLines={4}
         />
       </View>
-      <View className="w-full mx-2 justify-center px-4 py-2">
-        <Slider
-          value={number}
-          onValueChange={(value) => setNumber(value[0])}
-          step={1}
-          minimumValue={1}
-          maximumValue={premiumQuery.data ? 4 : 1}
-        />
-      </View>
+      {premiumQuery.data ? (
+        <View className="w-full mx-2 justify-center px-4 py-2">
+          <Slider
+            value={number}
+            onValueChange={(value) => setNumber(value[0])}
+            step={1}
+            minimumValue={1}
+            maximumValue={4}
+          />
+        </View>
+      ) : null}
       <View className="w-full justify-center pb-2 px-4">
         <Button
           mode="contained"
@@ -164,7 +166,7 @@ export default function TabOneScreen() {
         data={query.data}
         renderItem={({ item }) => (
           <Image
-            className="w-80 h-80 rounded-2xl shadow my-2"
+            className="w-80 h-80 rounded-2xl my-2"
             source={{
               uri: item,
             }}
