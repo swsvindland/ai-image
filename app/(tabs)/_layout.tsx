@@ -30,9 +30,16 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Generate",
-          tabBarIcon: ({ color }) => <TabBarIcon name="image" color={color} />,
+          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
         }}
       />
+      {/*<Tabs.Screen*/}
+      {/*  name="gallary"*/}
+      {/*  options={{*/}
+      {/*    title: "Gallary",*/}
+      {/*    tabBarIcon: ({ color }) => <TabBarIcon name="image" color={color} />,*/}
+      {/*  }}*/}
+      {/*/>*/}
       <Tabs.Screen
         name="two"
         options={{

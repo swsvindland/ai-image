@@ -5,12 +5,18 @@ import { useEffect, useState } from "react";
 import { Button, SegmentedButtons, TextInput } from "react-native-paper";
 import { useQuery } from "@tanstack/react-query";
 import * as FileSystem from "expo-file-system";
-import { checkSubscriptionStatus } from "@/app/(tabs)/two";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const getTrialAmount = async () => {
   try {
     const value = await AsyncStorage.getItem("trial");
+    const date = await AsyncStorage.getItem("trial-date");
+
+    if (date !== new Date().toDateString()) {
+      await saveTrialAmount(10);
+      return 10;
+    }
+
     if (value !== null) {
       return parseInt(value ?? "0");
     }
@@ -22,6 +28,7 @@ const getTrialAmount = async () => {
 const saveTrialAmount = async (value: number) => {
   try {
     await AsyncStorage.setItem("trial", value.toString());
+    await AsyncStorage.setItem("trial-date", new Date().toDateString());
   } catch (e) {
     console.error(e);
   }
@@ -34,11 +41,6 @@ export default function Free() {
   const [searchText, setSearchText] = useState("");
   const [trialAmount, setTrialAmount] = useState<number | undefined>(undefined);
   const [generatedAmount, setGeneratedAmount] = useState<number>(0);
-
-  const premiumQuery = useQuery({
-    queryKey: ["Premium"],
-    queryFn: checkSubscriptionStatus,
-  });
 
   const trialAmountQuery = useQuery({
     queryKey: ["TrialAmount"],
@@ -58,10 +60,6 @@ export default function Free() {
       setTrialAmount(trialAmountQuery.data);
     }
   }, [trialAmount, trialAmountQuery.data]);
-
-  useEffect(() => {
-    if (premiumQuery.data) setTrialAmount(9999);
-  }, [premiumQuery.data]);
 
   const query = useQuery({
     queryKey: ["Images", searchModel, searchText, generatedAmount],
