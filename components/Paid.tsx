@@ -1,4 +1,4 @@
-import { Image, Keyboard, FlatList } from "react-native";
+import { Image, Keyboard, FlatList, Text } from "react-native";
 
 import { View } from "@/components/Themed";
 import { useState } from "react";
@@ -6,6 +6,7 @@ import { Slider } from "@miblanchard/react-native-slider";
 import { Button, SegmentedButtons, TextInput } from "react-native-paper";
 import { useQuery } from "@tanstack/react-query";
 import * as FileSystem from "expo-file-system";
+import { savePicture } from "@/utils/saveToGallary";
 
 export default function Paid() {
   const [model, setModel] = useState<string>("default");
@@ -100,12 +101,21 @@ export default function Paid() {
       <FlatList
         data={query.data}
         renderItem={({ item }) => (
-          <Image
-            className="w-80 h-80 rounded-2xl my-2"
-            source={{
-              uri: item,
-            }}
-          />
+          <>
+            <Image
+              className="w-80 h-80 rounded-2xl my-2"
+              source={{
+                uri: item,
+              }}
+            />
+            <Button
+              mode="outlined"
+              icon="download"
+              onPress={() => savePicture(item)}
+            >
+              <Text>Download</Text>
+            </Button>
+          </>
         )}
         keyExtractor={(item) => item}
       />

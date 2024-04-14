@@ -6,6 +6,7 @@ import { Button, SegmentedButtons, TextInput } from "react-native-paper";
 import { useQuery } from "@tanstack/react-query";
 import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { savePicture } from "@/utils/saveToGallary";
 
 const getTrialAmount = async () => {
   try {
@@ -135,6 +136,15 @@ export default function Free() {
           uri: query.data?.uri,
         }}
       />
+      {query.data?.uri ? (
+        <Button
+          mode="outlined"
+          icon="download"
+          onPress={() => savePicture(query.data?.uri ?? "")}
+        >
+          <Text>Download</Text>
+        </Button>
+      ) : null}
     </View>
   );
 }
