@@ -63,19 +63,23 @@ with sdxl_image.imports():
 #
 # To avoid excessive cold-starts, we set the idle timeout to 240 seconds, meaning once a GPU has loaded the model it will stay
 # online for 4 minutes before spinning down. This can be adjusted for cost/experience trade-offs.
-
-
 @stub.cls(gpu=gpu.A10G(), container_idle_timeout=240, image=sdxl_image)
 class Model:
     @build()
     def build(self):
+        from huggingface_hub import snapshot_download
+
         ignore = [
             "*.bin",
             "*.onnx_data",
             "*/diffusion_pytorch_model.safetensors",
         ]
         snapshot_download(
-            'frankjoshua/juggernautXL_v8Rundiffusion'
+            "stabilityai/stable-diffusion-xl-base-1.0", ignore_patterns=ignore
+        )
+        snapshot_download(
+            "stabilityai/stable-diffusion-xl-refiner-1.0",
+            ignore_patterns=ignore,
         )
 
     @enter()
@@ -83,24 +87,43 @@ class Model:
         load_options = dict(
             torch_dtype=torch.float16,
             use_safetensors=True,
+            variant="fp16",
             device_map="auto",
         )
 
         # Load base model
         self.base = DiffusionPipeline.from_pretrained(
-            'frankjoshua/juggernautXL_v8Rundiffusion',
-            **load_options
+            "stabilityai/stable-diffusion-xl-base-1.0", **load_options
         )
 
+        # Load refiner model
+        self.refiner = DiffusionPipeline.from_pretrained(
+            "stabilityai/stable-diffusion-xl-refiner-1.0",
+            text_encoder_2=self.base.text_encoder_2,
+            vae=self.base.vae,
+            **load_options,
+        )
+
+        # Compiling the model graph is JIT so this will increase inference time for the first run
+        # but speed up subsequent runs. Uncomment to enable.
+        # self.base.unet = torch.compile(self.base.unet, mode="reduce-overhead", fullgraph=True)
+        # self.refiner.unet = torch.compile(self.refiner.unet, mode="reduce-overhead", fullgraph=True)
+
     def _inference(self, prompt, n_steps=24, high_noise_frac=0.8):
-        negative_prompt = ""
+        negative_prompt = "disfigured, ugly, deformed"
         image = self.base(
-            prompt="masterpiece, best quality, very aesthetic, absurdres" + prompt,
+            prompt=prompt,
             negative_prompt=negative_prompt,
-            width=832,
-            height=832,
-            guidance_scale=7,
-            num_inference_steps=28
+            num_inference_steps=n_steps,
+            denoising_end=high_noise_frac,
+            output_type="latent",
+        ).images
+        image = self.refiner(
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            num_inference_steps=n_steps,
+            denoising_start=high_noise_frac,
+            image=image,
         ).images[0]
 
         byte_stream = io.BytesIO()
@@ -113,6 +136,15 @@ class Model:
         return self._inference(
             prompt, n_steps=n_steps, high_noise_frac=high_noise_frac
         ).getvalue()
+
+    @web_endpoint()
+    def web_inference(self, prompt, n_steps=24, high_noise_frac=0.8):
+        return Response(
+            content=self._inference(
+                prompt, n_steps=n_steps, high_noise_frac=high_noise_frac
+            ).getvalue(),
+            media_type="image/jpeg",
+        )
 
 web_app = FastAPI()
 

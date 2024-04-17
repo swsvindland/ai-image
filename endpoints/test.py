@@ -1,89 +1,150 @@
-from dataclasses import dataclass
+# ---
+# lambda-test: false
+# ---
+
+from typing import Optional
+
+from fastapi import FastAPI, Header, Response
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+
+# ## Basic setup
+
+import io
 from pathlib import Path
 
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
-from fastapi.middleware.cors import CORSMiddleware
 from modal import (
     Image,
     Mount,
-    Secret,
     Stub,
-    Volume,
     asgi_app,
+    build,
     enter,
+    gpu,
     method,
+    web_endpoint,
+)
+
+# ## Define a container image
+#
+# To take advantage of Modal's blazing fast cold-start times, we'll need to download our model weights
+# inside our container image with a download function. We ignore binaries, ONNX weights and 32-bit weights.
+#
+# Tip: avoid using global variables in this function to ensure the download step detects model changes and
+# triggers a rebuild.
+
+
+sdxl_image = (
+    Image.debian_slim(python_version="3.10")
+    .apt_install(
+        "libglib2.0-0", "libsm6", "libxrender1", "libxext6", "ffmpeg", "libgl1"
+    )
+    .pip_install(
+        "diffusers==0.26.3",
+        "invisible_watermark==0.2.0",
+        "transformers~=4.38.2",
+        "accelerate==0.27.2",
+        "safetensors==0.4.2",
+    )
 )
 
 stub = Stub("test")
 
-image = Image.debian_slim(python_version="3.10").pip_install(
-    "accelerate==0.27.2",
-    "datasets~=2.13.0",
-    "ftfy~=6.1.0",
-    "gradio~=3.50.2",
-    "smart_open~=6.4.0",
-    "transformers~=4.38.1",
-    "torch~=2.2.0",
-    "torchvision~=0.16",
-    "triton~=2.2.0",
-    "peft==0.7.0",
-    "wandb==0.16.3",
-)
+with sdxl_image.imports():
+    import torch
+    from diffusers import DiffusionPipeline
+    from huggingface_hub import snapshot_download
 
-
-volume = Volume.from_name(
-    "models", create_if_missing=True
-)
-MODEL_DIR = "/models"
-
-@dataclass
-class SharedConfig:
-    """Configuration information shared across project components."""
-
-    # The instance name is the "proper noun" we're teaching the model
-    instance_name: str = "Qwerty"
-    # That proper noun is usually a member of some class (person, bird),
-    # and sharing that information with the model helps it generalize better.
-    class_name: str = "Golden Retriever"
-    # identifier for pretrained models on Hugging Face
-    model_name: str = "stabilityai/stable-diffusion-xl-base-1.0"
-    vae_name: str = "madebyollin/sdxl-vae-fp16-fix"  # required for numerical stability in fp16
-
-
-@stub.cls(image=image, gpu="A10G", volumes={MODEL_DIR: volume})
+# ## Load model and run inference
+#
+# The container lifecycle [`@enter` decorator](https://modal.com/docs/guide/lifecycle-functions#container-lifecycle-beta)
+# loads the model at startup. Then, we evaluate it in the `run_inference` function.
+#
+# To avoid excessive cold-starts, we set the idle timeout to 240 seconds, meaning once a GPU has loaded the model it will stay
+# online for 4 minutes before spinning down. This can be adjusted for cost/experience trade-offs.
+@stub.cls(gpu=gpu.A10G(), container_idle_timeout=240, image=sdxl_image)
 class Model:
+    @build()
+    def build(self):
+        from huggingface_hub import snapshot_download
+
+        ignore = [
+            "*.bin",
+            "*.onnx_data",
+            "*/diffusion_pytorch_model.safetensors",
+        ]
+        snapshot_download(
+            "stabilityai/stable-diffusion-xl-base-1.0", ignore_patterns=ignore
+        )
+        snapshot_download(
+            "stabilityai/stable-diffusion-xl-refiner-1.0",
+            ignore_patterns=ignore,
+        )
+
     @enter()
-    def load_model(self):
-        import torch
-        from diffusers import AutoencoderKL, DiffusionPipeline
-
-        config = SharedConfig()
-
-        # Reload the modal.Volume to ensure the latest state is accessible.
-        volume.reload()
-
-        # set up a hugging face inference pipeline using our model
-        pipe = DiffusionPipeline.from_pretrained(
-            config.model_name,
-            vae=AutoencoderKL.from_pretrained(
-                config.vae_name, torch_dtype=torch.float16
-            ),
+    def enter(self):
+        load_options = dict(
             torch_dtype=torch.float16,
-        ).to("cuda")
-        pipe.load_lora_weights(MODEL_DIR)
-        self.pipe = pipe
+            use_safetensors=True,
+            variant="fp16",
+            device_map="auto",
+        )
 
-    @method()
-    def inference(self, text, config):
-        image = self.pipe(
-            text,
-            num_inference_steps=config.num_inference_steps,
-            guidance_scale=config.guidance_scale,
+        # Load base model
+        self.base = DiffusionPipeline.from_pretrained(
+            "stabilityai/stable-diffusion-xl-base-1.0", **load_options
+        )
+
+        # Load refiner model
+        self.refiner = DiffusionPipeline.from_pretrained(
+            "stabilityai/stable-diffusion-xl-refiner-1.0",
+            text_encoder_2=self.base.text_encoder_2,
+            vae=self.base.vae,
+            **load_options,
+        )
+
+        # Compiling the model graph is JIT so this will increase inference time for the first run
+        # but speed up subsequent runs. Uncomment to enable.
+        # self.base.unet = torch.compile(self.base.unet, mode="reduce-overhead", fullgraph=True)
+        # self.refiner.unet = torch.compile(self.refiner.unet, mode="reduce-overhead", fullgraph=True)
+
+    def _inference(self, prompt, n_steps=24, high_noise_frac=0.8):
+        negative_prompt = "disfigured, ugly, deformed"
+        image = self.base(
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            num_inference_steps=n_steps,
+            denoising_end=high_noise_frac,
+            output_type="latent",
+        ).images
+        image = self.refiner(
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            num_inference_steps=n_steps,
+            denoising_start=high_noise_frac,
+            image=image,
         ).images[0]
 
-        return image
+        byte_stream = io.BytesIO()
+        image.save(byte_stream, format="JPEG")
 
+        return byte_stream
+
+    @method()
+    def inference(self, prompt, n_steps=24, high_noise_frac=0.8):
+        return self._inference(
+            prompt, n_steps=n_steps, high_noise_frac=high_noise_frac
+        ).getvalue()
+
+    @web_endpoint()
+    def web_inference(self, prompt, n_steps=24, high_noise_frac=0.8):
+        return Response(
+            content=self._inference(
+                prompt, n_steps=n_steps, high_noise_frac=high_noise_frac
+            ).getvalue(),
+            media_type="image/jpeg",
+        )
 
 web_app = FastAPI()
 
