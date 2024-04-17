@@ -22,7 +22,7 @@ export default function TabOneScreen() {
     );
   }
 
-  if (!premiumQuery.data) {
+  if (premiumQuery.data) {
     return <Free />;
   }
 

@@ -75,7 +75,7 @@ class Model:
             "*/diffusion_pytorch_model.safetensors",
         ]
         snapshot_download(
-            'misri/animaPencilXL_v200'
+            'cagliostrolab/animagine-xl-3.1'
         )
 
     @enter()
@@ -88,7 +88,7 @@ class Model:
 
         # Load base model
         self.base = DiffusionPipeline.from_pretrained(
-            'misri/animaPencilXL_v200',
+            'cagliostrolab/animagine-xl-3.1',
             **load_options
         )
 

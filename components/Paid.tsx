@@ -68,6 +68,7 @@ export default function Paid() {
             label: "Realistic",
           },
           { value: "anime", label: "Anime" },
+          { value: "test", label: "Test" },
         ]}
       />
       <View className="flex flex-row justify-center">
